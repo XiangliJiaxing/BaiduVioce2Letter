@@ -2,8 +2,12 @@ package com.vito.voice.voicedetect;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Html;
+import android.text.Spanned;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,14 +21,18 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private TextView regTmpResultTextView;
+    private TextView finalRegResultTextView;
     private  EventManager asr; // 管理类必须为单例. SDK中 无需调用任何逻辑，但需要创建一个新的识别事件管理器的话，之前的那个请设置为null，并不再使用。
+    private View startView;
+    private View endView;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        findViewById(R.id.tv_start).setOnClickListener(new View.OnClickListener() {
+        startView = findViewById(R.id.tv_start);
+        startView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 start();
@@ -32,13 +40,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         regTmpResultTextView = findViewById(R.id.tv_recognize_tmp_result);
-
-        findViewById(R.id.tv_end).setOnClickListener(new View.OnClickListener() {
+        finalRegResultTextView = findViewById(R.id.tv_recognize_result);
+        endView = findViewById(R.id.tv_end);
+        endView.setVisibility(View.INVISIBLE);
+        endView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 stop();
             }
         });
+        progressBar = findViewById(R.id.progress_bar);
     }
 
     /**
@@ -54,6 +65,9 @@ public class MainActivity extends AppCompatActivity {
                     if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_READY)){
                         // 引擎就绪，可以说话，一般在收到此事件后通过UI通知用户可以说话了
                         Toast.makeText(MainActivity.this, "引擎准备就绪", Toast.LENGTH_LONG).show();
+                        startView.setVisibility(View.INVISIBLE);
+                        endView.setVisibility(View.VISIBLE);
+                        progressBar.setVisibility(View.GONE);
                     }else if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_BEGIN)){
                         Log.i(TAG, "***检测到说话开始***");
                     }else if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_END)){
@@ -74,10 +88,21 @@ public class MainActivity extends AppCompatActivity {
                     }else if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_EXIT)){
                         Log.i(TAG, "***识别结束释放资源***");
                         Log.i(TAG, "*** params : " + params);
+                        Toast.makeText(MainActivity.this, "引擎已关闭", Toast.LENGTH_LONG).show();
+                        progressBar.setVisibility(View.GONE);
+                        startView.setVisibility(View.VISIBLE);
+                        endView.setVisibility(View.INVISIBLE);
                     }else if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_FINISH)){
                         // 识别结束(可能含有错误信息)
-                        Log.i(TAG, "***识别结束***");
-                        Log.i(TAG, "*** params : " + params);
+                        Log.i(TAG, "***断句识别结束***");
+                        String beforeFinalResult = finalRegResultTextView.getText().toString();
+                        if (TextUtils.isEmpty(beforeFinalResult)) {
+                            finalRegResultTextView.setText(regTmpResultTextView.getText().toString());
+                        } else {
+                            Spanned spanned = Html.fromHtml(beforeFinalResult.replace("##断句##", "<font color='#65b5d2'>##断句##</font>")
+                                    + "\r\n<font color='#65b5d2'>##断句##</font>\r\n" + regTmpResultTextView.getText().toString());
+                            finalRegResultTextView.setText(spanned);
+                        }
                     }else if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_AUDIO)){
                         // todo: 语音音频回调
                     }else if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_VOLUME)){
@@ -92,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void start(){
+        progressBar.setVisibility(View.VISIBLE);
         initEngine();
 //        SpeechConstant.ACCEPT_AUDIO_DATA;
 //        SpeechConstant.APP_ID;
@@ -103,12 +129,14 @@ public class MainActivity extends AppCompatActivity {
                 "\"appid\":11000641," +
                 "\"key\":\"4uvLCpOsMcGUUmeDLo7BNhgQ\"," +
                 "\"secret\":\"72a81a14f3c6671d051c199200e1005e\"," +
+                SpeechConstant.VAD_ENDPOINT_TIMEOUT + ":0," +
                 "\"sample\":16000}";
         asr.send(SpeechConstant.ASR_START, json, null, 0, 0);
     }
 
 
     private void stop(){
+        progressBar.setVisibility(View.VISIBLE);
         asr.send(SpeechConstant.ASR_STOP, null, null, 0, 0); // 发送停止录音事件，提前结束录音等待识别结果
     }
 
