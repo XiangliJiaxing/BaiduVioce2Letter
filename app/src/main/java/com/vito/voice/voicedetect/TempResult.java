@@ -18,6 +18,8 @@ public class TempResult {
     private String best_result;
     private String result_type;
     private List<String> results_recognition;
+    private String desc;
+    private int sub_error;
 
     public OriginResultBean getOrigin_result() {
         return origin_result;
@@ -57,6 +59,22 @@ public class TempResult {
 
     public void setResults_recognition(List<String> results_recognition) {
         this.results_recognition = results_recognition;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+
+    public int getSub_error() {
+        return sub_error;
+    }
+
+    public void setSub_error(int sub_error) {
+        this.sub_error = sub_error;
     }
 
     public static class OriginResultBean {

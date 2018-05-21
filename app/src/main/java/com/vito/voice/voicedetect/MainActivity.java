@@ -1,5 +1,9 @@
 package com.vito.voice.voicedetect;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Html;
@@ -16,6 +20,8 @@ import com.baidu.speech.EventManager;
 import com.baidu.speech.EventManagerFactory;
 import com.baidu.speech.asr.SpeechConstant;
 import com.google.gson.Gson;
+import com.iflytek.cloud.SpeechUtility;
+import com.vitovoiceprint.VocalVerifyDemo;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,6 +56,34 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         progressBar = findViewById(R.id.progress_bar);
+
+
+        // 声纹识别入口
+        findViewById(R.id.tv_vioceprint).setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                // 初始化
+                SpeechUtility.createUtility(MainActivity.this, com.iflytek.cloud.SpeechConstant.APPID +"=5b023950"
+                        +"," + com.iflytek.cloud.SpeechConstant.ENGINE_MODE + "=" + com.iflytek.cloud.SpeechConstant.MODE_MSC);
+                Intent intent = new Intent(MainActivity.this, VocalVerifyDemo.class);
+                startActivity(intent);
+            }
+        });
+
+        String[] permissions = new String []{Manifest.permission.RECORD_AUDIO, Manifest.permission.INTERNET};
+        PermissonUtil.requestPermissionForActivity(this, permissions, 100, true, new PermissonUtil.IGoToSettingListener() {
+            @Override
+            public void gotoSetting() {
+                JumpPermissionManagement.GoToSetting(MainActivity.this);
+            }
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
     }
 
     /**
